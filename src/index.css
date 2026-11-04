@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@layer base {
+  /* The app is dark-only. Telling the browser keeps native widgets
+     (checkboxes, scrollbars, file pickers, any remaining <select> popup)
+     from being drawn with a light desktop theme. */
+  :root {
+    color-scheme: dark;
+    accent-color: #10b981;
+  }
+
+  body {
+    font-family:
+      "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic",
+      sans-serif;
+  }
+
+  /* Native file-input button is a separate UA widget and needs its own colours. */
+  input[type="file"]::file-selector-button {
+    background-color: #0f172a;
+    color: #cbd5e1;
+    border: 1px solid #1e293b;
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.6rem;
+    margin-right: 0.6rem;
+    cursor: pointer;
+  }
+
+  input[type="file"]::file-selector-button:hover {
+    background-color: #1e293b;
+    color: #f1f5f9;
+  }
+}
+
+/* Custom sleek scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.55);
+}

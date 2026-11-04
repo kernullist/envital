@@ -1,0 +1,46 @@
+{
+  "name": "env-path-doctor",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cross-platform Environment Variable & PATH Doctor with Binary Shadowing Inspector and Time-Machine Rollback",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:tauri": "tauri dev",
+    "build": "tsc && vite build",
+    "build:tauri": "tauri build",
+    "build:debug": "tauri build --debug",
+    "preview": "vite preview",
+    "test:rust": "cargo test --lib --manifest-path src-tauri/Cargo.toml",
+    "check:rust": "cargo check --bins --manifest-path src-tauri/Cargo.toml",
+    "check": "npm run build && npm run test:rust && npm run check:rust",
+    "script:win": "pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/build.ps1",
+    "script:win:check": "pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Target check",
+    "script:linux": "bash ./scripts/build.sh",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@tauri-apps/api": "^2.2.0",
+    "@tauri-apps/plugin-dialog": "^2.2.0",
+    "@tauri-apps/plugin-shell": "^2.2.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.0.1",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.6",
+    "@tauri-apps/cli": "^2.2.0",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.6",
+    "typescript": "~5.7.2",
+    "vite": "^6.1.0"
+  }
+}
