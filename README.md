@@ -12,6 +12,8 @@
 > **"On Linux, which configuration file and which exact line added this `PATH` entry (Dotfile Tracing)?"**  
 > **Env & PATH Doctor** identifies the root cause immediately and lets you fix it safely with drag-and-drop.
 
+![Env & PATH Doctor Screenshot](./screenshots/screenshot.png)
+
 ---
 
 ## Key Features
