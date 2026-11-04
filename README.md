@@ -9,6 +9,7 @@
 **Env & PATH Doctor** is a cross-platform desktop application for diagnosing, visualizing, editing, and safely rolling back system environment variables and `PATH` configurations on Windows and Linux.
 
 > **"Why is the `python`, `node`, or `java` binary I installed running an older version (Binary Shadowing)?"**  
+> **"On Windows, why did editing `PATH` break `%SystemRoot%` expansion, or why is a System entry overriding my User `PATH`?"**  
 > **"On Linux, which configuration file and which exact line added this `PATH` entry (Dotfile Tracing)?"**  
 > **Env & PATH Doctor** identifies the root cause immediately and lets you fix it safely with drag-and-drop.
 
@@ -55,7 +56,10 @@ The health score also caps each category (dead paths 30, duplicates 15, empty fo
   - Separately loads User (`HKCU\Environment`), System (`HKLM\...\Environment`), and runtime Process variables.
   - **Strict `REG_SZ` vs `REG_EXPAND_SZ` Preservation:** Ensures paths containing `%SystemRoot%` or `%USERPROFILE%` are always stored as `REG_EXPAND_SZ` so Windows never fails to expand them.
   - **Immediate Hot Reload:** Broadcasts `SendMessageTimeoutW(HWND_BROADCAST, WM_SETTINGCHANGE, ..., "Environment")` after registry updates so Explorer and new terminals pick up changes without a reboot.
-  - **UAC Privilege Separation:** Runs under standard user permissions and only invokes an elevated PowerShell UAC helper when System (`HKLM`) variables are modified.
+  - **UAC Privilege Separation & Cross-Scope Safety:** Runs under standard user permissions and only invokes an elevated PowerShell UAC helper (`-Verb RunAs`) when System (`HKLM`) entries actually change. Editing User (`HKCU`) entries never triggers a UAC prompt, case-only key differences are ignored when comparing `HKLM` state, and partial imports (e.g., User-only JSON or a Linux profile) leave `HKLM` untouched instead of wiping machine-wide settings.
+  - **System-Before-User Resolution & `%VAR%` Expansion:** Reads `HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment` before `HKCU\Environment` to match how Windows constructs the effective `PATH`, while expanding `%VAR%` references case-insensitively (`HKCU` overrides `HKLM` for non-`PATH` variables) so every directory can be verified on disk.
+  - **Raw UTF-16LE Registry Decoding & Type Correction:** Reads and writes raw UTF-16LE registry bytes directly via `winreg`. Any `Path` or variable containing `%` is automatically promoted to `REG_EXPAND_SZ` (and re-written even if only the registry value kind changed), fixing broken `REG_SZ` entries created by third-party installers.
+  - **Accurate Windows 10/11 Build Detection & PATH Length Tracking:** Inspects `CurrentBuildNumber` (`>= 22000` for Windows 11, working around the legacy `"Windows 10"` registry `ProductName` string) and monitors total `PATH` length against the Windows environment limit.
 - **Linux Adapter (`src-tauri/src/platform/linux.rs`):**
   - **Step 1 - Read & Trace:** Statically parses every file that can contribute a `PATH` fragment — `/etc/environment`, `/etc/profile`, `/etc/profile.d/*.sh`, `/etc/environment.d/*.conf`, `/usr/lib/environment.d/*.conf` (systemd user session, where snapd appends `/snap/bin`), `~/.pam_environment` (pam_env's `KEY [DEFAULT=]value` syntax), `~/.profile`, `~/.bash_profile`, `~/.bashrc`, `~/.cargo/env`, `~/.zshenv`, `~/.zshrc`, `~/.config/fish/config.fish`, `~/.config/environment.d/*.conf` — and additionally traces `bash/zsh -xlc "env"` to attribute a fragment to a script that adds it dynamically (line numbers are exact for the statically parsed files). The app's own `zz-env-doctor.conf` is not treated as a source, and `env.sh` is only a fallback origin, so the report never cites the app as the author of the user's configuration.
   - **Per-occurrence attribution:** every declared fragment is remembered together with the file and line that declared it, in scan order. When the same fragment appears twice (e.g. `/etc/environment` sets `/snap/bin` and `990-snapd.conf` appends it again), each copy reports *its own* declaring file, and the report always states `Declared in: <file> (line n)`.
@@ -217,9 +221,19 @@ All development, testing, and packaging workflows are also available via [`packa
 
 ---
 
----
-
 ## Troubleshooting
+
+### Already-open terminal or IDE does not see updated variables (Windows)
+
+After clicking **Apply**, the app broadcasts `WM_SETTINGCHANGE` (`"Environment"`) to all top-level windows. **Windows Explorer** (`explorer.exe`) updates its environment block immediately, so any **new** terminal window launched from the Start menu or taskbar picks up the changes right away without a reboot or sign-out.
+
+However, processes that are **already running** — such as an open PowerShell/CMD tab, Windows Terminal instance, or VS Code — keep a snapshot of the environment from when they were started, and any child terminal opened inside them inherits that older snapshot:
+
+- Close and reopen **Windows Terminal** or **VS Code** (not just the integrated terminal tab inside it) so it inherits the updated environment from Explorer.
+- Or refresh `PATH` in the current PowerShell session without restarting the window:
+  ```powershell
+  $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+  ```
 
 ### Blank / white window that never repaints (Linux)
 
